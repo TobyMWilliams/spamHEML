@@ -3,7 +3,7 @@ import json
 class Read:
 
     #label 1 = spam
-    #label 0 = ham
+    #label 0 = hamaa
 
     #this means the field 'label text' can be removed
     def read_jsonl(file_path):
