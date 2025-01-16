@@ -1,18 +1,33 @@
 from Read import Read
+from Vectorize import Vectorize
+from ModelController import ModelController
+from sklearn.linear_model import LogisticRegression
 
 def main():
-    # Specify the path to your JSONL file
-    file_path = "train.jsonl"  # Adjust the path if the file is in a different directory
+
+    # File paths
+    training_file = "data/train.jsonl"
+    test_file = "data/test.jsonl"
+
+    # Step 1: Read data
+    train_data_texts  = Read.read_jsonl_text(training_file)
+    train_data_labels = Read.read_jsonl_label(training_file)
+
+    test_data_texts  = Read.read_jsonl_text(test_file)
+    test_data_labels = Read.read_jsonl_label(test_file)
     
-    # Call the read_jsonl method from the Read class
-    emails = Read.read_jsonl(file_path)
-    
-    # Print the first 5 emails
-    print("First 5 emails of train.jsonl:")
-    for i, email in enumerate(emails[:5]):
-        print(f"\n -- Email {i + 1} ---")
-        for key, value in email.items():
-            print(f"{key}: {value}")
+    # Step 2: Vectorize data
+    X_train, vectorize = Vectorize.vectorize_data(train_data_texts)
+    X_test = vectorize.transform(test_data_texts)
+
+    # Step 3: Train model
+    model = LogisticRegression()
+    model_controller = ModelController(model)
+    model_controller.train(X_train, train_data_labels)
+
+    # Step 4: Evaluate model
+    accuracy = model_controller.evaluate(X_test, test_data_labels)
+    print(f"Model Accuracy: {accuracy:.2f}")
 
 if __name__ == "__main__":
     main()
