@@ -26,8 +26,8 @@ def main():
     model_controller.train(X_train, train_data_labels)
 
     # Step 4: Evaluate model
-    accuracy = model_controller.evaluate(X_test, test_data_labels)
-    print(f"Model Accuracy: {accuracy:.2f}")
+    model_controller.evaluatePerformance(X_test, test_data_labels)
+
 
 if __name__ == "__main__":
     main()
