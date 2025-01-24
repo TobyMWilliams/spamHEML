@@ -65,7 +65,7 @@ class ModelController:
         print(f"{'False Negatives (FN):':<25}{fn}")
         print()
 
-        print("other important metrics:")
+        print("Other Important Metrics:")
         # calculate accuracy
         accuracy = (tp + tn) / (tp + tn + fp + fn)
         print(f"\n{'Accuracy:':<25}{accuracy:.4f}")
