@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import NMF
+
 
 from sklearn.preprocessing import StandardScaler
 from Vectorize import Vectorize
@@ -27,13 +29,20 @@ class Optimise:
         return reduced_features, svd
 
     @staticmethod
-    def apply_pca(feature_matrix, n_components = 30):
-        pca = PCA(n_components=30)
+    def apply_pca(feature_matrix, n_components):
+        pca = PCA(n_components)
         reduced_features = pca.fit_transform(feature_matrix)
         print("PCA complete. Explained variance ratio:")
         print(pca.explained_variance_ratio_)
         print(f"Total explained variance: {pca.explained_variance_ratio_.sum():.2f}")
 
         return reduced_features, pca
+    
+
+    @staticmethod
+    def apply_nmf(feature_matrix, n_components=45):
+        nmf = NMF(n_components=n_components, init='random', random_state=42)
+        reduced_features = nmf.fit_transform(feature_matrix)
+        return reduced_features, nmf
 
 

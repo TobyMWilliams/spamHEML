@@ -4,6 +4,7 @@ from Encrypt import PaillierEncryptor
 from Optimise import Optimise
 from ModelController import ModelController
 
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -11,7 +12,6 @@ import pickle
 import os
 
 
-filepath = "data/"
 
 def save_matrix(matrix, filepath):
     """Save the matrix to a file."""
@@ -31,26 +31,30 @@ def main():
     training_file = "data/train.jsonl"
     test_file     = "data/test.jsonl"
 
-        # train_fvm_path = "data/train_fvm(600comp).pkl"
-        # test_fvm_path = "data/test_fvm(600comp).pkl"
 
-    train_fvm_path = "data/intermediary/train_fvm(30comp).pkl"
-    test_fvm_path  = "data/intermediary/test_fvm(30comp).pkl"
+    train_fvm_path = "data/intermediary/train_fvm(45comp).pkl"
+    test_fvm_path  = "data/intermediary/test_fvm(45comp).pkl"
 
 
 
     svd_train_fvm_path = "data/intermediary/svd_train_fvm(30comp).pkl"
     svd_test_fvm_path  = "data/intermediary/svd_test_fvm(30comp).pkl"
 
-    enc_svd_train_fvm_path ="data/resulting/enc_svd_train_fvm(30comp).pkl"
-    enc_svd_test_fvm_path  ="data/resulting/enc_svd_test_fvm(30comp).pkl"
+    enc_svd_train_fvm_path ="data/resulting/enc_svd_train_fvm(45comp).pkl"
+    enc_svd_test_fvm_path  ="data/resulting/enc_svd_test_fvm(45comp).pkl"
 
 
-    pca_train_fvm_path = "data/intermediary/pca_train_fvm(30comp).pkl"
-    pca_test_fvm_path  = "data/intermediary/pca_test_fvm(30comp).pkl"
+    nmf_train_fvm_path = "data/intermediary/nmf_train_fvm(45comp).pkl"
+    nmf_test_fvm_path  = "data/intermediary/nmf_test_fvm(45comp).pkl"
 
-    enc_pca_train_fvm_path ="data/resulting/enc_pca_train_fvm(30comp).pkl"
-    enc_pca_test_fvm_path  ="data/resulting/enc_pca_test_fvm(30comp).pkl"
+    enc_nmf_train_fvm_path ="data/resulting/enc_nmf_train_fvm(45comp).pkl"
+    enc_nmf_test_fvm_path  ="data/resulting/enc_nmf_test_fvm(45comp).pkl"
+
+    pca_train_fvm_path = "data/intermediary/pca_train_fvm(45comp).pkl"
+    pca_test_fvm_path  = "data/intermediary/pca_test_fvm(45comp).pkl"
+
+    enc_pca_train_fvm_path ="data/resulting/enc_pca_train_fvm(45comp).pkl"
+    enc_pca_test_fvm_path  ="data/resulting/enc_pca_test_fvm(45comp).pkl"
 
     # Step 1: Read data
     train_data_texts  = Read.read_jsonl_text(training_file)
@@ -68,16 +72,12 @@ def main():
     print("X_train type:", type(X_train))
     print()
 
-    if os.path.exists(train_fvm_path) and os.path.exists(test_fvm_path):
-        print("Loading precomputed FVMs...")
-        X_train = load_matrix(train_fvm_path)
-        X_test = load_matrix(test_fvm_path)
-    else:
-        print("Computing FVMs...")
-        X_train, vectorizer = Vectorize.vectorize_data(train_data_texts)
-        X_test = vectorizer.transform(test_data_texts)
-        save_matrix(X_train, train_fvm_path)
-        save_matrix(X_test, test_fvm_path)
+    # always compute the FVMs, it doesnt take too long 
+    print("Computing FVMs...")
+    X_train, vectorizer = Vectorize.vectorize_data(train_data_texts)
+    X_test = vectorizer.transform(test_data_texts)
+    save_matrix(X_train, train_fvm_path)
+    save_matrix(X_test, test_fvm_path)
 
     print("Sample Train Row(X_train[0]):")
     print(X_train[0])
@@ -106,18 +106,29 @@ def main():
 
 
 
+                    # if os.path.exists(nmf_train_fvm_path) and os.path.exists(nmf_test_fvm_path):
+                    #     print("Loading precomputed reduced matrices...")
+                    #     X_train_reduced = load_matrix(nmf_train_fvm_path)
+                    #     X_test_reduced = load_matrix(nmf_test_fvm_path)
+                    # else:
+                    #     print("Applying NMF to reduce dimensionality...")
+                    #     X_train_reduced, nmf_model = Optimise.apply_nmf(X_train, n_components=45)
+                    #     X_test_reduced = nmf_model.transform(X_test)
+                    #     save_matrix(X_train_reduced, nmf_train_fvm_path)
+                    #     save_matrix(X_test_reduced, nmf_test_fvm_path)
+                    #     print("calculated the reduced matrices")
+
     if os.path.exists(pca_train_fvm_path) and os.path.exists(pca_test_fvm_path):
         print("Loading precomputed reduced matrices...")
         X_train_reduced = load_matrix(pca_train_fvm_path)
         X_test_reduced = load_matrix(pca_test_fvm_path)
     else:
-        print("Applying PCA to reduce dimensionality...")
-        X_train_reduced, pca_model = Optimise.apply_pca(X_train, n_components=30)
+        print("Applying NMF to reduce dimensionality...")
+        X_train_reduced, pca_model = Optimise.apply_pca(X_train, n_components=45)
         X_test_reduced = pca_model.transform(X_test)
         save_matrix(X_train_reduced, pca_train_fvm_path)
         save_matrix(X_test_reduced, pca_test_fvm_path)
         print("calculated the reduced matrices")
-
 
     print(f"Reduced Train Matrix Shape: {X_train_reduced.shape}")
     print(f"Reduced Test Matrix Shape: {X_test_reduced.shape}")
@@ -176,6 +187,8 @@ def main():
 
     # Step 5: Train model
     model = LogisticRegression()
+    #model = MultinomialNB()
+
     model_controller = ModelController(model)
     model_controller.train(X_train_encrypted, train_data_labels)
 

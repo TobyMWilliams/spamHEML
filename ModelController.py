@@ -1,6 +1,7 @@
 
 import time
 from sklearn.linear_model import LogisticRegression as Log
+from sklearn.naive_bayes import MultinomialNB as NB
 from sklearn.metrics import confusion_matrix, matthews_corrcoef
 from Read import Read
 from Vectorize import Vectorize
@@ -55,7 +56,7 @@ class ModelController:
         # calculate the confusion matrix
         predictions = self.predict(X)
         cm = confusion_matrix(y, predictions, labels=[1, 0])
-        tn, fp, fn, tp = cm.ravel()
+        tp, fn, fp, tn = cm.ravel()
 
         # output the confusion matrix 
         print(f"\n{'Confusion Matrix:':<25}")
