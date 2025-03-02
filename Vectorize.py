@@ -6,5 +6,5 @@ class Vectorize:
     @staticmethod
     def vectorize_data(data):
         """Vectorize the given data."""
-        vectorizer = TfidfVectorizer()
+        vectorizer = TfidfVectorizer(sublinear_tf=True)
         return vectorizer.fit_transform(data), vectorizer
