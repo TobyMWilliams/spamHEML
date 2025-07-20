@@ -5,7 +5,7 @@ class Read:
     #label 1 = spam
     #label 0 = ham
 
-    #this means the field 'label text' can be removed
+# method to parse the jsonl file and extract the text
     @staticmethod
     def read_jsonl_text(file_path):
         
@@ -20,6 +20,8 @@ class Read:
           
             return emails
     
+
+    # method to parse the jsonl file and extract the labels 
     @staticmethod
     def read_jsonl_label(file_path):
 
@@ -29,7 +31,7 @@ class Read:
 
                 data = json.loads(line)
 
-                labels.append(data.get("label", 0))
+                labels.append(data.get("label", 1))
 
                  
         return labels

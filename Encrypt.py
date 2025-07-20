@@ -1,95 +1,69 @@
 import numpy as np
 from tqdm import tqdm
-import random
+import tenseal as ts 
 import time
-import secrets
 from multiprocessing import Pool, cpu_count
-from sympy import randprime
-from math import gcd
-
-class PaillierEncryptor:
-
-    def __init__(self, bit_length=1024):
-        """
-        Initialize the encryptor by generating a key pair.
-        Args:
-            bit_length (int): Bit length for the keys. Default is 1024.
-        """
-        # Generate keys
-        self.p, self.q = self._generate_prime(bit_length // 2), self._generate_prime(bit_length // 2)
-        self.n = self.p * self.q
-        self.g = self.n + 1 
-        self.n_square = self.n * self.n
-
-    def _generate_prime(self, bit_length):
-        """Generate a random prime number using sympy library. 
-        Args:
-            bitlength(int): bit length of prime generated.
-        Returns:
-            int: prime num of specified length.
-        """
-        lower_bound = 2**(bit_length - 1)
-        upper_bound = 2**bit_length - 1
-        return randprime(lower_bound, upper_bound)
 
 
 
-    def _encrypt_value(self, m):
-        """Encrypt a single value using the Paillier encryption scheme."""
-        r = secrets.randbelow(self.n - 1) + 1  
-        g_m = pow(self.g, m, self.n_square)
-        r_n = pow(r, self.n, self.n_square)
-        c = (g_m * r_n) % self.n_square
-        return c
+
+# class to house all the encryption logic 
+class CKKS_Encryptor:
+    def __init__(self):
+        self.context = ts.context(
+            scheme=ts.SCHEME_TYPE.CKKS,
+            poly_modulus_degree=8192,
+            coeff_mod_bit_sizes=[60, 40, 40, 60]
+        )
+        self.context.global_scale = 2 ** 40
+        self.context.generate_galois_keys()
+        self.context.generate_relin_keys()
+
+
+
+    def get_encryption_context(self):
+
+        return self.context
+
+    def set_encryption_context(self, context):
     
+        self.context = context
 
-    def _encrypt_row(self, row):
-        """Encrypt a single row."""
-        return [self._encrypt_value(int(value)) for value in row]
-    
+    def encrypt_value(self, value):
+        
+        return ts.ckks_vector(self.context, [float(value)])
 
-    def _l_function(self, x, n):
-        """L function for Paillier decryption."""
-        return (x - 1) // n
+    def encrypt_row(self, row):
+       
+        return ts.ckks_vector(self.context, list(map(float, row)))
 
     def encrypt_feature_matrix(self, matrix):
-        """
-        Encrypt a matrix using Paillier encryption with GPU acceleration.
-        Args:
-            matrix (np.ndarray): The plaintext feature vector matrix.
-        Returns:
-            tf.Tensor: Encrypted feature vector matrix.
-        """
-
-        start_train = time.time()
-
-        if hasattr(matrix, "toarray"):  
-            print("matrix started as sparse representation")
+    
+        start_time = time.time()
+        if hasattr(matrix, "toarray"):  # Convert sparse representation to dense if necessary
+            print("Converting sparse matrix to dense representation...")
             matrix = matrix.toarray()
-        
-        encrypted_matrix = []
-        
-        print("Encrypting feature matrix...")
-        
-        with Pool(processes=cpu_count()) as pool:
-            #  tqdm to show the progress bar of encryption
-            encrypted_matrix = list(
-                tqdm(pool.imap(self._encrypt_row, matrix), total=len(matrix), desc="Encrypting rows")
-            )
-        
-        encrypted_matrix = np.array(encrypted_matrix, dtype=object)
-        encrypted_matrix = encrypted_matrix % (2**64 - 1) 
-        
-        # normalising the values retains their meaning whilst preventing overflow
-        max_value = np.max(encrypted_matrix)
-        min_value = np.min(encrypted_matrix)
-        encrypted_matrix = (encrypted_matrix - min_value) / (max_value - min_value)
 
-        train_time = time.time() - start_train
-        formatted_time = f"{train_time:.2f} seconds"
+        #print("Encrypting feature matrix with packing...")
+        encrypted_matrix = [self.encrypt_row(row) for row in tqdm(matrix, desc="Encrypting rows")]
+        elapsed = time.time() - start_time
+        print(f"Time taken to encrypt feature matrix: {elapsed:.2f} seconds")
+        return np.array(encrypted_matrix, dtype=object)
 
-        print(f"{'Time taken to encrypt FVM:':<35}{formatted_time}")
+    def encrypt_model_weights(self, model):
+        
+        if not hasattr(model, "coef_") or model.coef_ is None:
+            raise ValueError("Model has not been trained. No coefficients found.")
+
+        # Flatten weights and pack into one vector
+        weights = model.coef_.flatten()
+        intercept = float(model.intercept_[0])
+        print(f"Encrypting {len(weights)} weights into a single vector...")
+        encrypted_weights = ts.ckks_vector(self.context, list(map(float, weights)))
+        # For the intercept, we create a one-element vector
+        encrypted_intercept = ts.ckks_vector(self.context, [intercept])
+        print("Model weights encrypted successfully.")
+        return encrypted_weights, encrypted_intercept
 
 
-        return encrypted_matrix
 

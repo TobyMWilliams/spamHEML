@@ -1,39 +1,93 @@
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.decomposition import TruncatedSVD
+from sklearn.decomposition import PCA, TruncatedSVD, NMF, FastICA, SparsePCA
+
+
 
 from sklearn.preprocessing import StandardScaler
-from Vectorize import Vectorize
+from Vectorize import TFIDFVectorizer
+from sklearn.feature_selection import SelectKBest, chi2
+
 
 class Optimise:
 
-    @staticmethod
-    def apply_truncated_svd(feature_matrix, n_components = 30):
-        """
-        Apply Truncated Singular Value Decomposition (TruncatedSVD) to reduce dimensionality of the feature matrix.
 
-        :param feature_matrix: scipy.sparse matrix or dense numpy array of features
-        :param n_components: Number of components to retain
-        :return: Reduced feature matrix, TruncatedSVD model
-        """
-        print(f"Applying TruncatedSVD to reduce dimensions to {n_components}...")
+    # Sparse Dimensional reduction 
+    @staticmethod
+    def apply_sparse_pca(feature_matrix, n_components):
+        # print("applying SparsePCA.")
+
+        spca = SparsePCA(n_components=n_components, random_state=42)
+        reduced_features = spca.fit_transform(feature_matrix)
+        print(f"pca reduction to {n_components} complete.")
+        return reduced_features, spca
+        
+
+
+    #function to apply NMF to the feature matrix
+    @staticmethod
+    def apply_nmf(feature_matrix, n_components):
+        if hasattr(feature_matrix, 'toarray') and not isinstance(feature_matrix, np.ndarray):
+            feature_matrix = feature_matrix.toarray()
+        nmf = NMF(
+            n_components=n_components,
+            init='nndsvda',
+            solver='mu',
+            beta_loss='frobenius',
+            random_state=42,
+            max_iter=1000
+        )        
+        reduced_features = nmf.fit_transform(feature_matrix)
+        print(f"nmf reduction to {n_components} complete.")
+        return reduced_features, nmf
+
+
+    #function to apply truncated SVD to the feature matrix
+    @staticmethod
+    def apply_truncated_svd(feature_matrix, n_components ):
+       
+
         svd = TruncatedSVD(n_components=n_components, random_state=42)
         reduced_features = svd.fit_transform(feature_matrix)
-
-        print("TruncatedSVD complete. Explained variance ratio:")
-        print(svd.explained_variance_ratio_)
-        print(f"Total explained variance: {svd.explained_variance_ratio_.sum():.2f}")
-
+        print(f"svd reduction to {n_components} complete.")
         return reduced_features, svd
 
-    @staticmethod
-    def apply_pca(feature_matrix, n_components = 30):
-        pca = PCA(n_components=30)
-        reduced_features = pca.fit_transform(feature_matrix)
-        print("PCA complete. Explained variance ratio:")
-        print(pca.explained_variance_ratio_)
-        print(f"Total explained variance: {pca.explained_variance_ratio_.sum():.2f}")
 
+
+
+                # Dense Dimensional Reduction. 
+
+    #function to apply ICA to the feature matrix
+    @staticmethod
+    def apply_ica(feature_matrix, n_components):
+        
+        ica = FastICA(n_components=n_components, random_state=42, max_iter=1000)
+        reduced_features = ica.fit_transform(feature_matrix)
+        print(f"ica reduction to {n_components} complete.")
+        return reduced_features, ica
+
+
+    #function to apply PCA to the feature matrix
+    @staticmethod
+    def apply_pca(feature_matrix, n_components):
+
+        pca = PCA(n_components)
+        reduced_features = pca.fit_transform(feature_matrix)
+        print(f"pca reduction to {n_components} complete.")
         return reduced_features, pca
+    
+    #function to apply Chi reduction to the feature matrix
+    @staticmethod
+    def apply_chi2(feature_matrix, labels, n_components):
+        
+        print("applying Chi2 feature selection.")
+        if not isinstance(feature_matrix, np.ndarray) and hasattr(feature_matrix, "tocsr"):
+            feature_matrix = feature_matrix.tocsr()
+
+        chi = SelectKBest(score_func=chi2, k=n_components)
+        reduced_features = chi.fit_transform(feature_matrix, labels)
+        print(f"chi2 reduction to {n_components} complete.")
+        return reduced_features, chi
+
+
 
 

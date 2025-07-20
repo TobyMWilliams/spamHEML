@@ -20,6 +20,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import pickle
 import os
+import time
 from sklearn.metrics import confusion_matrix, matthews_corrcoef, accuracy_score
 
 
@@ -65,10 +66,6 @@ def run_naive_bayes_inference(X_train, y_train, X_test_reduced, y_test, encrypto
     #return cm
 
 
-   
-
-
-
 def run_logistic_inference(X_train, y_train, X_test_encrypted, y_test, label="testLR"):
 
     print(f"\n=== Running Logistic Regression Inference for {label} ===")
@@ -92,11 +89,11 @@ def run_logistic_inference(X_train, y_train, X_test_encrypted, y_test, label="te
     return  cm
 
 
-def run_sgd_inference(X_train, y_train, X_test_encrypted, y_test, label="testSGD"):
+def run_sgd_inference(X_train, y_train,    X_test_encrypted, y_test , loss,   label="testSGD",):
     print(f"\n=== Running SGDClassifier Inference for {label} ===")
 
     from sklearn.linear_model import SGDClassifier
-    model = SGDClassifier(loss="log_loss", max_iter=2000, tol=1e-3, random_state=42)
+    model = SGDClassifier(loss= loss, max_iter=2000, tol=1e-3, random_state=42)
 
     model_controller = SGDcontroller(model)
     model_controller.train(X_train, y_train)
@@ -132,8 +129,8 @@ def run_svm_inference(X_train, y_train, X_test_encrypted, y_test, label="testSVM
     return cm
 
 
-#baseline tests
 
+#plain-text baselines
 def run_naive_bayes_inference_plain(X_train, y_train, X_test_reduced, y_test, label="testNB"):
     print(f"\n=== Running Naive Bayes Inference for {label} ===")
 
@@ -156,8 +153,6 @@ def run_naive_bayes_inference_plain(X_train, y_train, X_test_reduced, y_test, la
     return cm
 
 
-
-
 def main():
 
 
@@ -171,113 +166,155 @@ def main():
     
     
     # Step 1: Read data
-    train_data_texts  = Read.read_jsonl_text(training_file)
+    # train_data_texts  = Read.read_jsonl_text(training_file)
     train_data_labels = Read.read_jsonl_label(training_file)
 
-    test_data_texts  = Read.read_jsonl_text(test_file)
+    # test_data_texts  = Read.read_jsonl_text(test_file)
     test_data_labels = Read.read_jsonl_label(test_file)
-    
-    baseDir = "data/featureData"
-    matrices = "data/featureData/matrices"
+
+   
+
+    #X_train, vectorize = TFIDFVectorizer.vectorize_data(train_data_texts)
+
+
+
+
     subDir = {
-        "60" : "60Features",
-    #     # "45" : "45Features",
-    #     # "30" : "30Features",
-     }
+        #"60" : "60Features",
+        "45" : "45Features",
+        #"30" : "30Features",
+    }
 
     # this needs to be the dim red schemes
     feature = {
         "BIGRAM" : "BIGRAM",
-        # "TRIGRAM": "TRIGRAM",
+        "TRIGRAM": "TRIGRAM",
         "TFIDF"  : "TFIDF",
-        # "GLOVE"  : "GloVe",
-        # "BOW"    : "BoW",
+        "GLOVE"  : "GloVe",
+        "BOW"    : "BoW",
         }
     
     dimensionReduction ={
-        "chi2" : "chi2",
+        # "chi2" : "chi2",
         # "pca"  : "pca",
         # "svd"  : "svd", 
         # "nmf" : "nmf",
         # "ica" : "ica",
     }
-
     baseDir = "data/featureData"
-    subDir = "60Features"
-    feature = "BoW"
-
-    tfidf_train = "data/featureData/TF_IDF_train.pkl"
-    tfidf_test = "data/featureData/TF_IDF_test.pkl"
-
-    # raw_train = load_matrix(tfidf_train)
-    # raw_test = load_matrix(tfidf_test)
-
-    # Train1, model = Optimise.apply_truncated_svd(raw_train, 500)
-    # Test1 = model.transform(raw_test)
-
-    # X_train_reduced, model = Optimise.apply_ica(Train1, 45)
-    # X_test_reduced = model.transform(Test1)
-
-   
 
 
 
+       
+
+    # Step 1: Read data
+    for key, name in subDir.items():
+
+        # this is now "data/featureData/60Features"
+        basePlus = os.path.join(baseDir, name)
+
+        num = key # 60, 45, 30
+
+        #this is now "data/featureData/matrices/60Features"
+            # where the confusion matrices will be saved
+        #matrixPlus = os.path.join(matrices, name)
 
 
-    
-    # Path = os.path.join(baseDir, subDir)
-    # fullpath = os.path.join(Path, feature)
-   
+        for key, name in feature.items():
+
+            #this is now "data/featureData/60Features/BIGRAM"
+            furtherPath = os.path.join(basePlus, name)
+            feat = name 
+
+            #this is now "data/featureData/matrices/60Features/BIGRAM"
+            #furtherMatrix = os.path.join(matrixPlus, name)
+            
 
 
-    # X_train_reduced = load_matrix(os.path.join(fullpath, "chi2_train.pkl"))
-    # X_test_reduced = load_matrix(os.path.join(fullpath, "chi2_test.pkl"))
+            # iterate for each dimensional reduction type
+            for key, name in dimensionReduction.items():
+                
+                # this is now "data/featureData/matrices/60Features/BIGRAM/chi2"
+                # outMatrix = os.path.join(furtherMatrix, name)
 
+                # this is now "data/featureData/60Features/BIGRAM/chi2"
+                inData = os.path.join(furtherPath, key)
+                # inData = f"data/featureData/CHIreduced/{name}_chi"
+                train = load_matrix(inData + "_train.pkl")
+                test  = load_matrix(inData + "_test.pkl")
 
-    # print(f"Reduced Train Matrix Shape: {X_train_reduced.shape}")
-    # print(f"Reduced Test Matrix Shape: {X_test_reduced.shape}")
-    # print()
+                print(f"Reduced Train Matrix Shape: {train.shape}")
+                print(f"Reduced Test Matrix Shape: {test.shape}")
+                print()
 
 
   
 
 
-    encryptor = CKKS_Encryptor()
-    # encryption_context = encryptor.get_encryption_context()
+                encryptor = CKKS_Encryptor()
+                X_test_encrypted = encryptor.encrypt_feature_matrix(test)
+
+                # encryption_context = encryptor.get_encryption_context()
+
+                
+
+                print("Encrypting reduced test data...")
+                # X_test_reduced = model_controller.scaler.transform(X_test_reduced)
+                # X_test_encrypted = encryptor.encrypt_feature_matrix(X_test_reduced)
+                print()
+
+                # # cm_nb = run_naive_bayes_inference(
+                # #                 X_train = X_train_reduced,
+                # #                 y_train = train_data_labels,
+                # #                 X_test_reduced = X_test_reduced,
+                # #                 y_test = test_data_labels,
+                # #                 encryptor = encryptor,
+                # #                 label = "test"
+                # #             )
+                starttime = time.time()
+                cm_lr = run_logistic_inference(
+                                X_train = train,
+                                y_train = train_data_labels,
+                                X_test_encrypted = X_test_encrypted,
+                                y_test = test_data_labels,
+                                label = "test"
+                            )
+                endtime = time.time() - starttime
+                print(f"PCA {feat} {num} Logistic Regression Inference Time: {endtime:.4f} seconds")
+                
+                cm_svm = run_svm_inference(
+                                        X_train = train,
+                                        y_train = train_data_labels,
+                                        X_test_encrypted = X_test_encrypted,
+                                        y_test = test_data_labels,
+                                        label = "test"
+                                    )
+    
+
+    # cm_sgd = run_sgd_inference(
+    #                     X_train = X_train_reduced,
+    #                     y_train = train_data_labels,
+
+    #                     X_test_encrypted = X_test_reduced,
+    #                     y_test = test_data_labels,
+                        
+    #                     loss = "log_loss",
+    #                     label = "test"
+    #                 )
+    # cm_sgd = run_sgd_inference(
+    #                     X_train = X_train_reduced,
+    #                     y_train = train_data_labels,
+
+    #                     X_test_encrypted = X_test_reduced,
+    #                     y_test = test_data_labels,
+
+    #                     loss = "hinge",
+    #                     label = "test"
+    #                 )
 
     
 
-    #print("Encrypting reduced test data...")
-    #X_test_encrypted = encryptor.encrypt_feature_matrix(X_test_reduced)
-    print()
-
-    # cm_nb = run_naive_bayes_inference_plain(
-    #                 X_train = X_train_reduced,
-    #                 y_train = train_data_labels,
-    #                 X_test_reduced = X_test_reduced,
-    #                 y_test = test_data_labels,
-    #                 #encryptor = encryptor,
-    #                 label = "test"
-    #             )
     
-    #
-    
-
-    # # cm_sgd = run_sgd_inference(
-    # #                     X_train = X_train_reduced,
-    # #                     y_train = train_data_labels,
-    # #                     X_test_encrypted = X_test_encrypted,
-    # #                     y_test = test_data_labels,
-    # #                     label = "test"
-    # #                 )
-
-    # # cm_svm = run_svm_inference(
-    # #                     X_train = X_train_reduced,
-    # #                     y_train = train_data_labels,
-    # #                     X_test_encrypted = X_test_encrypted,
-    # #                     y_test = test_data_labels,
-    # #                     label = "test"
-    # #                 )
      
     
 

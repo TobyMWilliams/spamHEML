@@ -1,0 +1,81 @@
+import plotly.graph_objects as go
+import plotly.express as px
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Example MCC values (replace with your actual results)
+
+
+def main():
+    
+    
+  
+
+    mcc_results = {
+
+    'nmf':     {"LogReg": 0.9242, "SVM": 0.9120, "SGD(log)": 0.7531, "SGD(modified_huber)" :   0.9242 , "GB" :  0.8343 },
+    'pca':     {"LogReg": 0.9396, "SVM": 0.9410, "SGD(log)": 0.9357, "SGD(modified_huber)" :   0.9313 , "GB" :  0.6920},
+    'chi2':    {"LogReg": 0.8824, "SVM": 0.8844, "SGD(log)": 0.8763, "SGD(modified_huber)" :   0.8838 , "GB" :  0.8591},
+    'svd':     {"LogReg": 0.9406, "SVM": 0.9470, "SGD(log)": 0.9386, "SGD(modified_huber)" :   0.9313 , "GB" :  0.6841 },
+    'ica':     {"LogReg": 0.9511, "SVM": 0.9510, "SGD(log)": 0.9491, "SGD(modified_huber)" :   0.9470 , "GB" :  0.8189 },
+
+    }
+
+    # Convert to DataFrame
+    df = pd.DataFrame(mcc_results).sort_index()
+
+    colors = ['#02f7eb', '#ff7700', '#f4a300', '#9702fa', '#02fa0f' ]  # Blue, Green, Red for 
+
+
+    # Grouped bar chart
+    ax = df.plot(kind='bar', figsize=(8, 5), edgecolor='black', color = colors)
+    ax.set_xlabel('Machine Learning model')
+    ax.set_ylabel('Matthews Correlation Coefficient (MCC)')
+    #ax.set_title('Graph showing MCC for NB Classifier with different feature types \n using 30, 45, and 60 features and chi2 reduction')
+    ax.set_title('MCC for ML models Across Dimensionality Reduction Techniques\nwith 45 Selected TF-IDF Features (chi² Filtered)')
+
+    ax.legend(title='Dimensionality Reduction', bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax.set_ylim([0.50, 1.0])
+
+
+    #  # === Find and highlight the highest MCC value ===
+    # max_mcc = df.max().max()
+    # max_label = None
+
+        # Annotate only the top MCC bar for each model
+    models = df.index.tolist()
+    dr_methods = df.columns.tolist()
+    num_models = len(models)
+    num_dr = len(dr_methods)
+
+    # Loop through models to find & label the best DR method
+    for i, model in enumerate(models):
+        best_dr = df.loc[model].idxmax()
+        best_val = df.loc[model, best_dr]
+        j = dr_methods.index(best_dr)  # Column index of best DR method
+
+        patch_index = j * num_models + i
+        bar = ax.patches[patch_index]
+
+        # Label best MCC per model
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.005,
+            f'{best_val:.4f}',
+            ha='center',
+            va='bottom',
+            fontsize=9,
+            fontweight='bold'
+        )
+
+
+    # # Draw a line at max MCC
+    # ax.axhline(max_mcc, color='red', linestyle='--', linewidth=1)
+    # ax.text(len(df) - 0.3, max_mcc + 0.005, f"Top MCC: {max_mcc:.3f}", color='red', fontsize=10)
+
+    plt.xticks(rotation = 15)
+    plt.tight_layout()
+    plt.show()
+
+if __name__ == "__main__":
+    main()
