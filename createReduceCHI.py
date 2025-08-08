@@ -31,7 +31,7 @@ def global_scale(train, test):
     return train_scaled, test_scaled
 
 
-def reduce_with_chi2(train_path, test_path, label_path, out_train_path, out_test_path, k=5000):
+def reduce_with_chi2(train_path, test_path, label_path, k=5000):
     print(f"\nReducing: {train_path}")
 
     # Load matrices and labels
@@ -139,8 +139,8 @@ def main():
             in_paths[f"{name}_train"],
             in_paths[f"{name}_test"],
             label_path,
-            f"data/featureData/CHIreduced/{name}_chi_train.pkl",
-            f"data/featureData/CHIreduced/{name}_chi_test.pkl"
+            # f"data/featureData/CHIreduced/{name}_chi_train.pkl",
+            # f"data/featureData/CHIreduced/{name}_chi_test.pkl"
         )
         # train_time = time.time() - start_train
         # print (f"ChiReduction to 5000 for {name}:  {train_time:.5f} seconds")

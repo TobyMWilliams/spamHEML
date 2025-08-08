@@ -13,23 +13,23 @@ class Optimise:
 
     # Sparse Dimensional reduction 
     @staticmethod
-    def apply_sparse_pca(feature_matrix, n_components):
+    def apply_sparse_pca(feature_matrix, k):
         # print("applying SparsePCA.")
 
-        spca = SparsePCA(n_components=n_components, random_state=42)
+        spca = SparsePCA(k=k, random_state=42)
         reduced_features = spca.fit_transform(feature_matrix)
-        print(f"pca reduction to {n_components} complete.")
+        print(f"pca reduction to {k} complete.")
         return reduced_features, spca
         
 
 
     #function to apply NMF to the feature matrix
     @staticmethod
-    def apply_nmf(feature_matrix, n_components):
+    def apply_nmf(feature_matrix, k):
         if hasattr(feature_matrix, 'toarray') and not isinstance(feature_matrix, np.ndarray):
             feature_matrix = feature_matrix.toarray()
         nmf = NMF(
-            n_components=n_components,
+            k=k,
             init='nndsvda',
             solver='mu',
             beta_loss='frobenius',
@@ -37,18 +37,18 @@ class Optimise:
             max_iter=1000
         )        
         reduced_features = nmf.fit_transform(feature_matrix)
-        print(f"nmf reduction to {n_components} complete.")
+        print(f"nmf reduction to {k} complete.")
         return reduced_features, nmf
 
 
     #function to apply truncated SVD to the feature matrix
     @staticmethod
-    def apply_truncated_svd(feature_matrix, n_components ):
+    def apply_truncated_svd(feature_matrix, k ):
        
 
-        svd = TruncatedSVD(n_components=n_components, random_state=42)
+        svd = TruncatedSVD(k, random_state=42)
         reduced_features = svd.fit_transform(feature_matrix)
-        print(f"svd reduction to {n_components} complete.")
+        print(f"svd reduction to {k} complete.")
         return reduced_features, svd
 
 
@@ -58,34 +58,34 @@ class Optimise:
 
     #function to apply ICA to the feature matrix
     @staticmethod
-    def apply_ica(feature_matrix, n_components):
+    def apply_ica(feature_matrix, k):
         
-        ica = FastICA(n_components=n_components, random_state=42, max_iter=1000)
+        ica = FastICA(k=k, random_state=42, max_iter=1000)
         reduced_features = ica.fit_transform(feature_matrix)
-        print(f"ica reduction to {n_components} complete.")
+        print(f"ica reduction to {k} complete.")
         return reduced_features, ica
 
 
     #function to apply PCA to the feature matrix
     @staticmethod
-    def apply_pca(feature_matrix, n_components):
+    def apply_pca(feature_matrix, k):
 
-        pca = PCA(n_components)
+        pca = PCA(k)
         reduced_features = pca.fit_transform(feature_matrix)
-        print(f"pca reduction to {n_components} complete.")
+        print(f"pca reduction to {k} complete.")
         return reduced_features, pca
     
     #function to apply Chi reduction to the feature matrix
     @staticmethod
-    def apply_chi2(feature_matrix, labels, n_components):
+    def apply_chi2(feature_matrix, labels, k):
         
         print("applying Chi2 feature selection.")
         if not isinstance(feature_matrix, np.ndarray) and hasattr(feature_matrix, "tocsr"):
             feature_matrix = feature_matrix.tocsr()
 
-        chi = SelectKBest(score_func=chi2, k=n_components)
+        chi = SelectKBest(score_func=chi2, k=k)
         reduced_features = chi.fit_transform(feature_matrix, labels)
-        print(f"chi2 reduction to {n_components} complete.")
+        print(f"chi2 reduction to {k} complete.")
         return reduced_features, chi
 
 
